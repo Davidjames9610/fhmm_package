@@ -1,0 +1,21 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+[project]
+name = "example_package_davidjames9610"
+version = "0.0.1"
+authors = [
+  { name="David Edwards", email="davidjames9610@gmail.com" },
+]
+description = "A small example package"
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+Homepage = "https://github.com/Davidjames9610/package_tut"
+Issues = "https://github.com/Davidjames9610/package_tut/issues"

@@ -1,0 +1,14 @@
+
+start here
+signal_a, signal_b
+
+f                    v
+
+=> 
+
+methods
+    decode_mixed_signal(mixed_signal: np.array)
+    output: 
+
+output,
+two decoded sequences
