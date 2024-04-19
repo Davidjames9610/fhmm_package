@@ -36,7 +36,7 @@ def get_combined_mean_covariance_and_state_dict(hmm_a: GaussianHMM, hmm_b: Gauss
                 m_mask = (mean_j > mean_k)
                 covar_j = np.diag(covars_a[j])
                 covar_k = np.diag(covars_b[k])
-                covars_combined.append(np.diag(np.where(m_mask, covar_j, covar_k)))
+                covars_combined.append(np.where(m_mask, covar_j, covar_k))
                 states_dict.append([j, k])
         return np.array(means_combined), np.array(covars_combined), states_dict
 

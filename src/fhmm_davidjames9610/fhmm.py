@@ -79,8 +79,21 @@ class FHMM:
         np.arrays decoded state sequence,
         log probability of state sequence
         """
-        pass
 
+        log_prob, states_decoded = self.hmm_combined.decode(X)
+
+        # split into separate:
+
+        ss01 = []
+        ss02 = []
+        for x in range(len(states_decoded)):
+            temp = self.state_dict[states_decoded[x]]
+            ss01.append(temp[0])
+            ss02.append(temp[1])
+
+        return log_prob, [ss01, ss02]
+
+        # split state sequence into two
 
 if __name__ == '__main__':
 
