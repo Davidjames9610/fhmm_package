@@ -1,3 +1,4 @@
+import logging
 import src.fhmm_davidjames9610.fhmm_utils as fhmm_utils
 import numpy as np 
 from hmmlearn.hmm import GaussianHMM
@@ -59,8 +60,12 @@ def get_noise_avg_watts(data, snr):
     noise_avg_watts = 10 ** (noise_avg_db / 10)
     return noise_avg_watts
 
-    
+def normalize(audio):
+    audio = np.where(audio == 0, audio + 0.001, audio)
+    std = (np.round(np.std(audio) * 1000) / 1000) * 10  # 97%
+    mean = np.mean(audio)
+    new_audio = (audio - mean) / std
+    if np.mean(new_audio) > 0.01:
+        raise logging.warning('mean is large')
+    return new_audio
 
-
-
-    

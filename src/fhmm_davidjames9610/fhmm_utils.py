@@ -49,3 +49,43 @@ def kronecker_list(list_A):
     for i in range(len(list_A)-1):
         result=np.kron(result,list_A[i+1])
     return result
+
+def get_soft_mask(features, a_mean, a_ss, b_mean, b_ss, alpha=0):
+    '''
+        Parameters
+        ----------
+        features: array
+            mixed features array
+        a_mean: array
+            mean of hmm_a
+        a_ss: array
+            state sequence for hmm_a
+        
+        Returns
+        -------
+        mask_a, mask_b,
+        why did I raise to exp here again? # TODO: why exp in mask 
+        """
+    '''
+    frames = features.shape[0]
+    mask_a = np.zeros(features.shape)
+    mask_b = np.zeros(features.shape)
+    for i in range(frames):
+        mask_a_means = np.exp(a_mean[int(a_ss[i])])
+        mask_b_means = np.exp(b_mean[int(b_ss[i])])
+        mask_a[i, :] = mask_a_means / ((mask_b_means * alpha) + mask_a_means)
+        mask_b[i, :] = mask_b_means / (mask_b_means + (mask_a_means * alpha))
+    return mask_a, mask_b
+
+    # @staticmethod TODO: add hard mask
+    # def getHardMask(features, model01: inputParams, model02: inputParams):
+    #     frames = features.shape[0]
+    #     mask01 = np.zeros(features.shape)
+    #     mask02 = np.zeros(features.shape)
+    #     for i in range(frames):
+    #         mask01_means = model01.m[model01.ss[i]]
+    #         mask02_means = model02.m[model02.ss[i]]
+    #         mask_test = (mask01_means > mask02_means).astype(int)
+    #         mask01[i, :] = mask_test
+    #         mask02[i, :] = ((mask_test - 1) * -1)
+    #     return mask01, mask02

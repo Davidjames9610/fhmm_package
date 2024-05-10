@@ -1,9 +1,7 @@
 from hmmlearn.hmm import GaussianHMM
+import librosa
 import numpy as np
-from src.fhmm_davidjames9610.fhmm_utils import get_combined_mean_covariance_and_state_dict, kronecker_list
-
-
-# use combined not comb
+from src.fhmm_davidjames9610.fhmm_utils import get_combined_mean_covariance_and_state_dict, kronecker_list, get_soft_mask
 
 class FHMM:
 
@@ -77,6 +75,7 @@ class FHMM:
 
         state_sequence_b : array, shape (n_samples, )
         np.arrays decoded state sequence,
+
         log probability of state sequence
         """
 
@@ -94,6 +93,66 @@ class FHMM:
         return log_prob, [ss01, ss02]
 
         # split state sequence into two
+
+    def seperate_features(self, X, mask_type='soft'):
+        """
+        Decode mixed feature into clean audio
+        
+        Parameters
+        ----------
+        X: np.array
+            log-power features of signals combined
+        
+        Returns
+        -------
+        feat_a: array, shape (n_samples, )
+            features for hmm_a
+        
+        feat_b: array, shape (n_samples, )
+            features for hmm_b
+        """
+        _, [ss_a, ss_b] = self.decode(X)
+
+        # if mask_type == 'soft':
+        mask_a, mask_b = get_soft_mask(X, self.hmm_a.means_, ss_a, self.hmm_b.means_, ss_b)
+
+        feat_a = ((np.exp(X)) * mask_a)
+        feat_b = ((np.exp(X)) * mask_b)
+
+        return feat_a, feat_b
+
+    def get_clean_audio(self, X, nfft, mask_type ='soft'):
+        """
+        Decode mixed feature into clean audio
+        
+        Parameters
+        ----------
+        X: np.array
+            log-power features of signals combined
+
+        nfft: int
+            used to convert back to time domain
+        
+        Returns
+        -------
+        sig_a : array, shape (n_samples, )
+            clean audio in time domain for hmm_a
+        
+        sig_b : array, shape (n_samples, )
+            clean audio in time domain for hmm_b.
+
+        uses 'Approximate magnitude spectrogram inversion using the "fast" Griffin-Lim algorithm' from librosa documentation
+        """
+
+        feat_a, feat_b = self.seperate_features(X, mask_type)
+
+        feat_a_stft = np.sqrt(feat_a)
+        feat_b_stft = np.sqrt(feat_b)
+
+        sig_a = librosa.griffinlim(feat_a_stft.T, n_fft=nfft)
+        sig_b = librosa.griffinlim(feat_b_stft.T, n_fft=nfft)
+
+        return sig_a, sig_b
 
 if __name__ == '__main__':
 
