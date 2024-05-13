@@ -50,7 +50,7 @@ def kronecker_list(list_A):
         result=np.kron(result,list_A[i+1])
     return result
 
-def get_soft_mask(features, a_mean, a_ss, b_mean, b_ss, alpha=0):
+def get_soft_mask(features, a_mean, a_ss, b_mean, b_ss, alpha=1):
     '''
         Parameters
         ----------

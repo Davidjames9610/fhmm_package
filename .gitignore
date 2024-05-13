@@ -4,3 +4,4 @@
 *.pytest_cache
 *.png
 src/.DS_Store
+*.wav

@@ -11,6 +11,7 @@ import logging
 import numpy as np 
 import matplotlib.pyplot as plt
 import warnings
+import soundfile as sf
 
 # Mute DeprecationWarning
 # Configure logging
@@ -33,20 +34,13 @@ class TestFHMM(unittest.TestCase):
             os.remove(output_dir + file)
     
     def setUp(self) -> None:
-        # create csv files
-        # create_data()
-        # # load data 
-        # output_dir = "./tests/test_data/"
-        # csv_files = [file for file in os.listdir(output_dir) if file.endswith('.csv')]
-        # loaded_arrays = {}
-        # # Load each CSV file into a NumPy array and store in the dictionary
-        # for file in csv_files:
-        #     file_path = os.path.join(output_dir, file)
-        #     array_name = file.split('.')[0]  # Use file name without extension as array name
-        #     loaded_arrays[array_name] = np.genfromtxt(file_path, delimiter=',')
-        # self.features = loaded_arrays
 
         # set up logging
+
+        self.output_dir = './tests'
+        output_dir = self.output_dir + '/' + 'setup'
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
 
         self.logger = logging.getLogger('simple_example')
         self.logger.setLevel(logging.DEBUG)
@@ -74,22 +68,73 @@ class TestFHMM(unittest.TestCase):
         # combine sounds in time domain
         self.whale_robin_audio = self.whale_audio + self.robin_audio
 
+        plt.plot(self.whale_audio)
+        plt.savefig(output_dir + '/whale_audio.png')
+        plt.close()
+
+        plt.plot(self.robin_audio)
+        plt.savefig(output_dir + '/robin_audio.png')
+        plt.close()
+
+        plt.plot(self.whale_robin_audio, label='comb')
+        plt.plot(self.whale_audio, label='whale')
+        plt.plot(self.robin_audio, label='robin')
+        plt.legend(loc='upper right', facecolor='white',framealpha=1)
+        plt.savefig(output_dir + '/whale_robin_audio.png')
+        plt.close()
+
         self.nfft = 128
         self.whale_features = get_feature(self.whale_audio, nfft=self.nfft)
         self.robin_features = get_feature(self.robin_audio, nfft=self.nfft)
         self.whale_robin_features = get_feature(self.whale_robin_audio, nfft=self.nfft)
 
+        plt.pcolormesh(self.whale_features)
+        plt.savefig(output_dir + '/whale_feature.png')
+        plt.close()
+
+        plt.pcolormesh(self.robin_features)
+        plt.savefig(output_dir + '/robin_feature.png')
+        plt.close()
+
+        plt.pcolormesh(self.whale_robin_features)
+        plt.savefig(output_dir + '/whale_robin_feature.png')
+        plt.close()
+
+        sf.write(output_dir + '/whale_robin.wav', self.whale_robin_audio, self.sr , 'PCM_24')
+        sf.write(output_dir + '/whale.wav', self.whale_audio, self.sr , 'PCM_24')
+        sf.write(output_dir + '/robin.wav', self.robin_audio, self.sr , 'PCM_24')
+
         # create noise for combining
-        snr_1 = test_fhmm_utils.get_noise_avg_watts(self.whale_audio, 30)
-        snr_2 = test_fhmm_utils.get_noise_avg_watts(self.whale_audio, 20)
-        snr_3 = test_fhmm_utils.get_noise_avg_watts(self.whale_audio, 10)
+        snr_1 = test_fhmm_utils.get_noise_avg_watts(self.whale_audio, 20)
+        snr_2 = test_fhmm_utils.get_noise_avg_watts(self.whale_audio, 40)
+        snr_3 = test_fhmm_utils.get_noise_avg_watts(self.whale_audio, 5)
 
         self.noise_audio, ss = test_fhmm_utils.generate_gaussian_noise(len(self.whale_audio), snr_1 , snr_2, snr_3)
         self.noise_features = get_feature(self.noise_audio, self.nfft)
         self.whale_noise_audio = self.noise_audio + self.whale_audio
         self.whale_noise_features = get_feature(self.whale_noise_audio, self.nfft)
+    
+        plt.plot(self.noise_audio)
+        plt.savefig(output_dir + '/noise_audio.png')
+        plt.close()
 
-        self.output_dir = './tests'
+        plt.plot(self.whale_noise_audio, label='comb')
+        plt.plot(self.whale_audio, label='whale')
+        plt.plot(self.noise_audio, label='noise')
+        plt.legend(loc='upper right', facecolor='white',framealpha=1)
+        plt.savefig(output_dir + '/whale_noise_audio.png')
+        plt.close()
+
+        plt.pcolormesh(self.noise_features)
+        plt.savefig(output_dir + '/noise_feature.png')
+        plt.close()
+
+        plt.pcolormesh(self.whale_noise_features)
+        plt.savefig(output_dir + '/whale_noise_feature.png')
+        plt.close()
+
+        sf.write(output_dir + '/noise.wav', self.noise_audio, self.sr , 'PCM_24')
+        sf.write(output_dir + '/whale_noise.wav', self.whale_noise_audio, self.sr , 'PCM_24')
 
     def tearDown(self):
         # Cleanup tasks to be performed after tests
@@ -202,18 +247,58 @@ class TestFHMM(unittest.TestCase):
         plt.savefig('./tests/output/noise_test_noise_states.png')
         plt.close()
 
-    def test_does_fhmm_output_clean_audio(self):
+    def test_does_fhmm_output_stft_for_whale_noise(self):
+
+        output_dir = self.output_dir + '/' + self._testMethodName
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+
+        my_fhmm = FHMM(4,4)
+        my_fhmm.fit(self.whale_features, self.noise_features)
+        whale_feature, noise_feature = my_fhmm.seperate_features(self.whale_noise_features, self.nfft)
+
+        plt.pcolormesh(np.log(whale_feature))
+        plt.savefig(output_dir + '/whale_feature_seperated.png')
+        plt.close()
+
+        plt.pcolormesh(np.log(noise_feature))
+        plt.savefig(output_dir + '/noise_feature_seperated.png')
+        plt.close()
+
+        assert len(whale_feature) > 0
+        assert len(noise_feature) > 0
+
+    def test_does_fhmm_output_stft_for_whale_robin(self):
+
+        output_dir = self.output_dir + '/' + self._testMethodName
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+
+        my_fhmm = FHMM(4,4)
+        my_fhmm.fit(self.whale_features, self.robin_features)
+        whale_feature, robin_feature = my_fhmm.seperate_features(self.whale_robin_features, self.nfft)
+
+        plt.pcolormesh(np.log(whale_feature))
+        plt.savefig(output_dir + '/whale_feature_seperated.png')
+        plt.close()
+
+        plt.pcolormesh(np.log(robin_feature))
+        plt.savefig(output_dir + '/robin_feature_seperated.png')
+        plt.close()
+
+        assert len(whale_feature) > 0
+        assert len(robin_feature) > 0
+
+    def test_does_fhmm_output_clean_audio_for_whale_noise(self):
         '''
-        test the fhmm can output clean audio given mixed audio, and similar audio to the two mixed signals.
-        How can I measure how closely the two signals resemble each other? just use the same signal for the moment
-        # TODO clean audio process not working
+        test the fhmm can output clean audio given mixed whale and noise
         '''
 
         output_dir = self.output_dir + '/' + self._testMethodName
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
 
-        my_fhmm = FHMM(4,2)
+        my_fhmm = FHMM(5,3)
         my_fhmm.fit(self.whale_features, self.noise_features)
         whale_audio, noise_audio = my_fhmm.get_clean_audio(self.whale_noise_features, self.nfft)
 
@@ -225,8 +310,38 @@ class TestFHMM(unittest.TestCase):
         plt.savefig(output_dir + '/noise_audio.png')
         plt.close()
 
+        sf.write(output_dir + '/whale_seperated.wav', whale_audio, self.sr , 'PCM_24')
+        sf.write(output_dir + '/noise_seperated.wav', noise_audio, self.sr , 'PCM_24')
+
         assert len(whale_audio) > 0
         assert len(noise_audio) > 0
+
+    def test_does_fhmm_output_clean_audio_for_whale_robin(self):
+        '''
+        test the fhmm can output clean audio given mixed whale robin
+        '''
+
+        output_dir = self.output_dir + '/' + self._testMethodName
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+
+        my_fhmm = FHMM(5,3)
+        my_fhmm.fit(self.whale_features, self.robin_features)
+        whale_audio, robin_audio = my_fhmm.get_clean_audio(self.whale_robin_features, self.nfft)
+
+        plt.plot(whale_audio)
+        plt.savefig(output_dir + '/whale_audio.png')
+        plt.close()
+
+        plt.plot(robin_audio)
+        plt.savefig(output_dir + '/robin_audio.png')
+        plt.close()
+
+        sf.write(output_dir + '/whale_seperated.wav', whale_audio, self.sr , 'PCM_24')
+        sf.write(output_dir + '/robin_seperated.wav', robin_audio, self.sr , 'PCM_24')
+
+        assert len(whale_audio) > 0
+        assert len(robin_audio) > 0
 
     def test_does_logging_work(self):
         self.logger.debug('simple message')
