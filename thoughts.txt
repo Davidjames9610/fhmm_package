@@ -1,0 +1,145 @@
+
+
+Confusion between whale and speaker routes,
+
+but they share a lot in common.
+I need them to be split up differently.
+
+speaker usually has lots of different files, with VAD required.
+Whale usually lots of files with annotations,
+
+This ends up at the same place,
+samples with labels
+
+Then a fe method is chosen.
+Training is done on a train set
+
+Testing,
+optionally noise / reverb can be added here
+
+Test is run with same classifier, this can either be done using a per sample method where the classifier with the largest probability is chosen, or in the case of the whale a combined model in which we see where the Viterbi algorithm goes.
+
+Main choices
+
+-- VAD vs Annotations.
+-- Pre process method
+-- Training (includes training a noise HMM for FHMM case if noise is added)
+-- Post Process method (includes adding noise and reverb)
+-- Testing, Combined model (only works with HMMs) or highest log probability.
+
+Also:
+Amount of iterations - sometimes you need to re-init HMM and select the one with the highest probability.
+Cross-validation, works well if we want to split data in train, test and evaluate.
+
+How can we do this in one, and keep it simple, should this be a package or library? I reckon so.
+
+-- Need to split it up into sep sections
+
+    section 1, files to samples,
+    input: A: files and file names
+    input: B: files and annotations
+    output: normalised samples, and labels.
+
+    will usually have a set of speakers or whales or whatever,
+
+    this point I need to end up with a dict ? do I need anything else here ? this section is responsible for
+    setting the sample rate, and making sure samples are normalised
+
+    samples = []
+    labels = []
+
+    section 2, samples to features,
+    -- choose fe_method,
+    -- noise and reverb, apply to test / evaluate before fe method,
+
+    select fe_methods,
+    -- this point also is important for choosing cross-validation, and train-test-eval split
+    - fe_methods = ['mfcc', 'log-power', 'lfcc']
+    - select noise or reverb to be applied to eval and test
+    - post_proc = ['noise', 'reverb']
+
+    -- labels don't change
+
+    -- classifier won't know nature of pre and post will just recieve features,
+    -- what about cass for FHMM ?
+
+
+    features = {
+        'mfcc':
+            'train': [],
+            'train_labels': [cv_index_0] [cv_index_1]
+            'test': [],
+            'test_labels': []   // test and eval will need different process method if noise is being added
+            'eval': [],
+            'eval_labels': [],
+            'noise_examples': [] # examples of just the noise for the fhmm to train on, just add 10 then ignore
+        'lpf_20snrGauss_reverb':
+            ...
+    }
+
+    -- should I save this in pickle ?
+
+    how to link and configure fe methods to classifiers ?
+    classifier is what we are trying to test...
+
+    section 3, features to classifiers
+
+
+    The results of this is a dict of classifiers for every one of the features chosen,
+    will be the same classifier,
+
+    classifiers = {
+        'mfcc':
+            'speaker_a': GaussianHMM(),
+            'speaker_b': GaussianHMM(),
+        'mfcc_20snr': ...
+    }
+
+    There are ways to include val and train data, as well as number of iterations
+    for now just train on train data and expand later
+
+    #%%
+
+    classifier to results
+
+    input is dict of classifier and test features and labels (array or single),
+    output really depends on choice, just get simple classifier working for the moment
+
+    choices
+    classification - per sample basis
+    regression - create combined model,
+        - per sample basis, not sure how this will look yet -- finish last
+        - on long audio clip, output annotation here ?
+
+    although cross-validation is usually used to determine parameters of HMM, in this case we are using it
+    to get a better understanding
+
+    classifiers_combined()
+
+        - init([classifier_key-feature_key pair])
+
+        - train(train_features, test_features), will use train and test features,
+        does this make sense?
+        for each classifier in classifiers
+            train on features, init as many times as needed, cv index,
+
+        - test(audio_clip, features[])
+            if audio_clip provided then run Vitirbi on audio clip,
+            otherwise assume that we are running on 'eval' samples in features.
+
+
+    -- choose hmm types, e.g gaussian, gmm, fhmm
+    -- train on features and evaluate,
+    -- in both cases will have a bunch of classifiers,
+    -- choice: per sample or Vitirbi.
+    -- per_sample - output confusion matrix
+    -- Vitirbi - confusion matrix and optional annotated audio sample, this is where smoothing would be useful
+
+
+    -- not sure how eval and test should look ?
+
+    Id rather have multiple features, then train, test and evaluate a single classifier at a time,
+
+
+
+
