@@ -5,3 +5,4 @@
 *.png
 src/.DS_Store
 *.wav
+*.pickle
