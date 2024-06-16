@@ -2,3 +2,6 @@
 
 sr = 22050
 
+# noise types
+GAUSS = 'gauss'
+

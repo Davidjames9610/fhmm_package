@@ -141,5 +141,30 @@ How can we do this in one, and keep it simple, should this be a package or libra
     Id rather have multiple features, then train, test and evaluate a single classifier at a time,
 
 
+todos:
+
+a. files to samples
+-- this is a little different for everything so not worried about it
+
+b. samples to features
+
+done:
+    - created simple way to get average power of all signals in cv_output
+    - reformat to use snrs
+
+-- this can become a script,
+
+inputs:
+    - types of fe methods and their vars
+    - type of noise - Gaussian(snrs)
+
+
+
+-- this is where I am confused with the difference in the cross-validation
+-- used to test ? in this case should update validation, why wouldn't I?
+-- ignoring test for now, just using train and validate
+
+
+
 
 
