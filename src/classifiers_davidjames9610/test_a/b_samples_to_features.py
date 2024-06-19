@@ -12,44 +12,6 @@ import src.misc_davidjames9610.fe_methods as fe
 import src.misc_davidjames9610.proc_methods as pm
 import random
 
-# TODO expand this to include reverb
-# annoying that I check for noise twice :/
-def get_features(cv_output, fe_method, snr=None, signal_average_power=None):
-
-    features = {}
-
-    # train
-    train_features = []
-    train_labels = []
-    n_folds = len(cv_output['train_data'])
-    for i in range(n_folds):
-        curr_features = [fe_method(sample) for sample in cv_output['train_data'][i]]
-        curr_labels = cv_output['train_label'][i]
-        train_features.append(curr_features)
-        train_labels.append(curr_labels)
-
-        # ng inf error handler
-        # mask = [np.isneginf(array).any() for array in curr_features]
-        # train_features.append([feat for feat in curr_features if not mask])
-        # mask = np.invert(np.array(mask))
-        # train_labels.append(cv_output['train_label'][i][mask])
-
-    features['train_features'] = train_features
-    features['train_label'] = train_labels
-
-    # val
-    val_features = []
-    val_labels = []
-    for i in range(n_folds):
-        fold_samples = cv_output['val_data'][i]
-        fold_features = []
-        for sample in fold_samples:
-
-            pass
-        val_features.append([fe_method(sample) for sample in cv_output['val_data'][i]])
-    features[fe_name]['val_features'] = val_features
-    features[fe_name]['val_label'] = cv_output['val_label']
-
 def get_average_power_for_samples(cv_output):
     # get average signal power
     curr_samples = cv_output['train_data'][0]

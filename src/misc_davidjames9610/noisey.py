@@ -102,6 +102,13 @@ def addTimeDomain(s1, s2, loca=0.5):
     s3 = s1 + s2
     return s3
 
+def get_noise_for_sample(signal_sample_len, sig_db=-16, snr_1=30, snr_2=30, snr_3=30):
+    noise_power_1 = get_noise_power_given_signal_avg_db(sig_db, snr_1)
+    noise_power_2 = get_noise_power_given_signal_avg_db(sig_db, snr_2)
+    noise_power_3 = get_noise_power_given_signal_avg_db(sig_db, snr_3)
+
+    noisey_sample, _ = generate_gaussian_noise(signal_sample_len, noise_power_1, noise_power_2, noise_power_3)
+    return noisey_sample
 
 def getNoiseMatrix(features, length, mean):
     mean = np.ones(features) * mean

@@ -1,0 +1,30 @@
+
+
+a files to samples
+    more general somehow
+    - needs VAD
+
+b samples to features
+    include
+        Gauss Noise [ ]
+        Reverb [ ]
+        Real Noise
+
+c features to classifier
+    include fhmm
+
+d classifier to results
+    decode combine results [ ]
+    annotations [ ]
+
+what output formats are possible here / do we want ?
+
+classification
+    this is per sample operation, where we score on each sample and choose the best classifier
+
+decode_combine
+    this is Viterbi, we get a class for each bin, depends on accuracy of annotations
+    result of this can be shown in confusion matrix
+    just get this working for the moment, then go back to samples to features
+
+

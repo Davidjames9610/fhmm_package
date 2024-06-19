@@ -22,7 +22,6 @@ class FHMM:
         self.hmm_combined = None
         self.init = True
 
-
     def fit(self, features_a, features_b):
         """
         fit hmms function.
@@ -92,8 +91,11 @@ class FHMM:
 
         return log_prob, [ss01, ss02]
 
-        # split state sequence into two
+    def score(self, X):
+        log_prob, _ = self.decode(X)
+        return log_prob
 
+    # split state sequence into two
     def seperate_features(self, X, mask_type='soft'):
         """
         Decode mixed feature into clean audio
