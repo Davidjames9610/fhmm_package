@@ -3,9 +3,11 @@ import numpy as np
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 import matplotlib.pyplot as plt
 
-def get_classification_results(features, classifiers, sls, plot_cm=True):
+def get_classification_results(features, classifiers, sls, plot_cm=True, save_plots=True):
 
     results = {}  # one for each process method
+
+    output_dir = 'results/classification'
 
     # CLASSIFICATION
     for feature_key in features:
@@ -31,6 +33,8 @@ def get_classification_results(features, classifiers, sls, plot_cm=True):
         if plot_cm:
             disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=list(sls['num_to_label'].keys()))
             disp.plot(cmap=plt.cm.Blues, values_format='g')
+            plt.title(feature_key)
+            plt.savefig(output_dir + feature_key + '.png')
             plt.show()
 
         results[feature_key] = cm
