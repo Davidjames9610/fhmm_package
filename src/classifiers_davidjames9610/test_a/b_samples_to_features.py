@@ -1,15 +1,4 @@
-
-import src.ads_davidjames9610.ads as ads
-import src.ads_davidjames9610.useful as useful
 import numpy as np
-import os
-import os.path
-from pathlib import Path
-import matplotlib.pyplot as plt
-from importlib import reload
-from src.classifiers_davidjames9610.test_a.e_config import *
-import src.misc_davidjames9610.fe_methods as fe
-import src.misc_davidjames9610.proc_methods as pm
 import random
 
 def get_average_power_for_samples(cv_output):

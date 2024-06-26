@@ -1,14 +1,15 @@
 
 
 a files to samples
-    more general somehow
-    - needs VAD
+    general - done - sr = 22050
+    VAD for i vectors - done sr - 16000
+    whale - [ ] # todo
 
 b samples to features
     include
-        Gauss Noise [ ]
+        Gauss Noise - done
         Reverb [ ]
-        Real Noise
+        Real Noise - need to do
 
 c features to classifier
     include fhmm
@@ -25,6 +26,7 @@ classification
 decode_combine
     this is Viterbi, we get a class for each bin, depends on accuracy of annotations
     result of this can be shown in confusion matrix
-    just get this working for the moment, then go back to samples to features
+    just get this working for the moment, then go back to samples to features,
 
-
+    log power features, # todo
+    classifier GMM, # todo

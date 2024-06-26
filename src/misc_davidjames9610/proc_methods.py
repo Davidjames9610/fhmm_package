@@ -31,4 +31,8 @@ def file_to_audio(file_dr, sample_rate):
 
     return audio.numpy().flatten()
 
+def get_audio_sr(file):
+    y, sr = librosa.load(file)
+    print('natural sr is: ', sr)
+    return sr
 

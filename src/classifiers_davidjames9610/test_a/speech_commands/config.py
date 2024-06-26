@@ -1,6 +1,6 @@
 # define constants for test
 
-sr = 22050
+sr = 16000  # 22050
 
 # noise types
 GAUSS = 'gauss'
