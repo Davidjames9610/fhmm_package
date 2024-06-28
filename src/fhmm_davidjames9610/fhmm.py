@@ -50,6 +50,7 @@ class FHMM:
 
         # create HMM
         hmm_combined = GaussianHMM(self.n_components_a * self.n_components_b, covariance_type='diag')
+        hmm_combined.n_features = self.hmm_a.n_features
         hmm_combined.transmat_, hmm_combined.startprob_, hmm_combined.means_, hmm_combined.covars_ = a_combined, pi_combined, combined_mean, combined_covariance
 
         # combine things

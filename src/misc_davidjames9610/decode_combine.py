@@ -6,7 +6,7 @@ from the noise model and re-normalize,
 
 # from hmm import myHmm
 # from hmm.general_hmm_utils import normalise_a_matrix, calculate_emission_matrix, calculate_emission_matrix_gmm, viterbi_algorithm
-from hmmlearn.hmm import GaussianHMM, GMMHMM
+from hmmlearn.hmm import GaussianHMM, GMMHMM, BaseHMM
 import numpy as np
 from scipy.stats import multivariate_normal as mvn
 
@@ -24,8 +24,8 @@ def get_accuracy_from_decoder(labels, decoder_output, correct_state):
 
 class DecodeCombineBase:
 
-    def __init__(self, array_of_hmms: [GaussianHMM]):
-        self.models: [GaussianHMM] = array_of_hmms
+    def __init__(self, array_of_hmms: [BaseHMM]):
+        self.models: [BaseHMM] = array_of_hmms
         self.n_models = len(self.models)
         total_states = 0
         for i in range(self.n_models):
