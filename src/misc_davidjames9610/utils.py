@@ -1,10 +1,21 @@
-import os
-def create_directory_if_not_exists(directory_path):
+import os, shutil
+def create_directory_if_not_exists(directory_path, clean_dir=True):
     if not os.path.exists(directory_path):
         os.makedirs(directory_path)
         print(f"Directory '{directory_path}' created.")
     else:
-        print(f"Directory '{directory_path}' already exists.")
+        print(f"Directory '{directory_path}' already exists, removing old files: ", clean_dir)
+        if clean_dir:
+            for file_name in os.listdir(directory_path):
+                file_path = os.path.join(directory_path, file_name)
+                try:
+                    if os.path.isfile(file_path) or os.path.islink(file_path):
+                        os.unlink(file_path)
+                    elif os.path.isdir(file_path):
+                        shutil.rmtree(file_path)
+                except Exception as e:
+                    print('Failed to delete %s. Reason: %s' % (file_path, e))
+
 
 def buffer(x, n, p=0, opt=None):
     """

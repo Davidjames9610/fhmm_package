@@ -1,5 +1,6 @@
 import numpy as np
 import random
+import src.ads_davidjames9610.useful as useful
 
 def get_average_power_for_samples(cv_output):
     # get average signal power
@@ -80,3 +81,22 @@ def buffer(x, n, p=0, opt=None):
         result = np.hstack([result, np.expand_dims(col, axis=0).T])
 
     return result.T
+def get_real_noise_sample(noise_key, target_snr_db, signal_db, sample_len, sr):
+    # 1. read in noise sample and normalise
+    noise_sample = useful.file_to_audio(noise_key, sr)[0]
+
+    if len(noise_sample) < sample_len:
+        print('oh no; len(noise_sample) < sample_len')
+
+    # 2. Calculate the scaling factor
+    noise_avg_watts = np.mean(noise_sample ** 2)
+
+    noise_target_db = signal_db - target_snr_db
+    noise_target_watts = 10 ** (noise_target_db / 10)
+
+    scaling_factor = np.sqrt(noise_target_watts / noise_avg_watts)
+
+    # 3. return noise scaled
+    scaled_noise_sample = noise_sample * scaling_factor
+
+    return scaled_noise_sample

@@ -1,3 +1,4 @@
+import time
 from importlib import reload
 
 from hmmlearn.base import BaseHMM
@@ -9,6 +10,8 @@ import src.misc_davidjames9610.utils as utils
 from scipy import stats
 reload(utils)
 
+quick = True
+
 def get_classification_results(features, classifiers, sls, basedir, plot_cm=True, save_plots=True):
 
     results = {}  # one for each process method
@@ -16,16 +19,17 @@ def get_classification_results(features, classifiers, sls, basedir, plot_cm=True
     output_dir = basedir + '/results/classification/normal'
     utils.create_directory_if_not_exists(output_dir)
 
-    # CLASSIFICATION
     for classifier in classifiers:
 
         all_features_for_classifier = classifier['features']
         classifier_type = classifier['type']
         results[classifier_type] = {}
-
+        start_time = time.time()
         print('For classifier:', classifier_type)
 
         for feature_key in all_features_for_classifier:
+
+            results[classifier_type][feature_key] = {}
             print('  Testing for:', feature_key)
 
             cv_index = 0    # todo think about updating this cv index for testing
@@ -56,8 +60,13 @@ def get_classification_results(features, classifiers, sls, basedir, plot_cm=True
             plt.close()
 
             results[classifier_type][feature_key] = cm
-            break
-        break
+
+            if quick: break
+
+        end_time = time.time()
+        results[classifier_type + '_time'] = end_time - start_time
+
+        if quick: break
 
     return results
 
@@ -76,7 +85,7 @@ def get_classification_buff_results(features, classifiers, sls, basedir,
         all_features_for_classifier = classifier['features']
         classifier_type = classifier['type']
         results[classifier_type] = {}
-
+        start_time = time.time()
         print('For classifier:', classifier_type)
 
         for feature_key in all_features_for_classifier:
@@ -114,8 +123,12 @@ def get_classification_buff_results(features, classifiers, sls, basedir,
             plt.close()
 
             results[classifier_type][feature_key] = cm
-            break
-        break
+            if quick: break
+
+        end_time = time.time()
+        results[classifier_type + '_time'] = end_time - start_time
+
+        if quick: break
     return results
 
 # similar to above, except run V-alg over concat input sequence
@@ -130,6 +143,8 @@ def get_classification_valg_results(features, classifiers, sls, basedir, plot_cm
 
     # CLASSIFICATION
     for classifier in classifiers:
+
+        start_time = time.time()
 
         all_features_for_classifier = classifier['features']
         classifier_type = classifier['type']
@@ -178,9 +193,15 @@ def get_classification_valg_results(features, classifiers, sls, basedir, plot_cm
                     plt.show()
                 plt.close()
 
+                results[classifier_type][feature_key] = cm
+
                 print('use cm')
-                break
-        break
+                if quick: break
+
+        end_time = time.time()
+        results[classifier_type + '_time'] = end_time - start_time
+        if quick: break
+
     return results
 
 def get_classification_valg_buffer_results(features, classifiers, sls, basedir, plot_cm=True, save_plots=True):
@@ -194,6 +215,8 @@ def get_classification_valg_buffer_results(features, classifiers, sls, basedir, 
 
     # CLASSIFICATION
     for classifier in classifiers:
+
+        start_time = time.time()
 
         all_features_for_classifier = classifier['features']
         classifier_type = classifier['type']
@@ -260,8 +283,15 @@ def get_classification_valg_buffer_results(features, classifiers, sls, basedir, 
                 if plot_cm:
                     plt.show()
                 plt.close()
-                break
-        break
+
+                results[classifier_type][feature_key] = cm
+
+                if quick: break
+
+        end_time = time.time()
+        results[classifier_type + '_time'] = end_time - start_time
+        if quick: break
+
     return results
 
 # updates feature dictionary to include buffered features and labels
@@ -287,4 +317,4 @@ def include_buffer_in_features(features, buffer_length=500, buffer_step=250):
         features[feature_key]['buffer_features'] = buffer_features
         features[feature_key]['buffer_labels'] = buffer_labels
         features[feature_key]['buffer_labels_mode'] = buffer_labels_mode
-        break
+        # break
