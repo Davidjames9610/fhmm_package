@@ -3,20 +3,21 @@ from importlib import reload
 
 from hmmlearn.base import BaseHMM
 import numpy as np
+from scipy.stats import stats
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 import matplotlib.pyplot as plt
+
+
 import src.misc_davidjames9610.decode_combine as dc
 import src.misc_davidjames9610.utils as utils
-from scipy import stats
-reload(utils)
 
-quick = True
+quick = False
 
 def get_classification_results(features, classifiers, sls, basedir, plot_cm=True, save_plots=True):
 
     results = {}  # one for each process method
 
-    output_dir = basedir + '/results/classification/normal'
+    output_dir = basedir + '/results/classification/normal/'
     utils.create_directory_if_not_exists(output_dir)
 
     for classifier in classifiers:
@@ -29,7 +30,6 @@ def get_classification_results(features, classifiers, sls, basedir, plot_cm=True
 
         for feature_key in all_features_for_classifier:
 
-            results[classifier_type][feature_key] = {}
             print('  Testing for:', feature_key)
 
             cv_index = 0    # todo think about updating this cv index for testing
@@ -47,19 +47,18 @@ def get_classification_results(features, classifiers, sls, basedir, plot_cm=True
                 arg_max_speaker = np.argmax(speakers_scores)
                 test_labels.append(arg_max_speaker)
 
-            cm = confusion_matrix(np.array(test_labels), curr_label, labels=list(sls['num_to_label'].keys()),
-                                  normalize='true')
+            performance_metrics = utils.get_performance_metrics(np.array(test_labels), curr_label, labels=list(sls['num_to_label'].keys()))
 
-            disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=list(sls['num_to_label'].keys()))
+            disp = ConfusionMatrixDisplay(confusion_matrix=performance_metrics['cm'], display_labels=list(sls['num_to_label'].keys()))
             disp.plot(cmap=plt.cm.Blues, values_format='.2f')
-            plt.title(feature_key)
+            plt.title(classifier_type + '_' + feature_key)
             if save_plots:
                 plt.savefig(output_dir + classifier_type + '_' + feature_key + '.png')
             if plot_cm:
                 plt.show()
             plt.close()
 
-            results[classifier_type][feature_key] = cm
+            results[classifier_type][feature_key] = performance_metrics
 
             if quick: break
 
@@ -76,7 +75,7 @@ def get_classification_buff_results(features, classifiers, sls, basedir,
 
     results = {}  # one for each process method
 
-    output_dir = basedir + '/results/classification/buffer'
+    output_dir = basedir + '/results/classification/buffer/'
     utils.create_directory_if_not_exists(output_dir)
 
     # CLASSIFICATION
@@ -110,19 +109,18 @@ def get_classification_buff_results(features, classifiers, sls, basedir,
                 arg_max_speaker = np.argmax(speakers_scores)
                 test_labels.append(arg_max_speaker)
 
-            cm = confusion_matrix(np.array(test_labels), buffer_labels_mode, labels=list(sls['num_to_label'].keys()),
-                                  normalize='true')
+            performance_metrics = utils.get_performance_metrics(buffer_labels_mode, np.array(test_labels), list(sls['num_to_label'].keys()))
 
-            disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=list(sls['num_to_label'].keys()))
+            disp = ConfusionMatrixDisplay(confusion_matrix=performance_metrics['cm'], display_labels=list(sls['num_to_label'].keys()))
             disp.plot(cmap=plt.cm.Blues, values_format='.2f')
-            plt.title(feature_key)
+            plt.title(classifier_type + '_' + feature_key)
             if save_plots:
                 plt.savefig(output_dir + classifier_type + '_' + feature_key + '.png')
             if plot_cm:
                 plt.show()
             plt.close()
 
-            results[classifier_type][feature_key] = cm
+            results[classifier_type][feature_key] = performance_metrics
             if quick: break
 
         end_time = time.time()
@@ -138,7 +136,7 @@ def get_classification_valg_results(features, classifiers, sls, basedir, plot_cm
 
     count = 0
 
-    output_dir = basedir + '/results/classification-valg/normal'
+    output_dir = basedir + '/results/classification-valg/normal/'
     utils.create_directory_if_not_exists(output_dir)
 
     # CLASSIFICATION
@@ -181,10 +179,10 @@ def get_classification_valg_results(features, classifiers, sls, basedir, plot_cm
                 _, labels_predicted, val_log_prob = combined_model.decode_hmmlearn(np.concatenate(curr_features))
 
                 # CM
-                cm = confusion_matrix(labels_true, labels_predicted, labels=list(sls['num_to_label'].keys()),
-                                      normalize='true')
+                performance_metrics = utils.get_performance_metrics(labels_true, labels_predicted,
+                                                                    list(sls['num_to_label'].keys()))
 
-                disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=list(sls['num_to_label'].keys()))
+                disp = ConfusionMatrixDisplay(confusion_matrix=performance_metrics['cm'], display_labels=list(sls['num_to_label'].keys()))
                 disp.plot(cmap=plt.cm.Blues, values_format='.2f')
                 plt.title(classifier_type + '_' + feature_key)
                 if save_plots:
@@ -193,7 +191,7 @@ def get_classification_valg_results(features, classifiers, sls, basedir, plot_cm
                     plt.show()
                 plt.close()
 
-                results[classifier_type][feature_key] = cm
+                results[classifier_type][feature_key] = performance_metrics
 
                 print('use cm')
                 if quick: break
@@ -269,13 +267,12 @@ def get_classification_valg_buffer_results(features, classifiers, sls, basedir, 
                 # mode input
                 min_length = np.min([len(labels_predicted_mode), len(buffer_labels_mode)])
 
-                cm = confusion_matrix(
+                performance_metrics = utils.get_performance_metrics(
                     labels_predicted_mode[:min_length],
                     buffer_labels_mode[:min_length],
-                    labels=list(sls['num_to_label'].keys()),
-                    normalize='true')
+                    labels=list(sls['num_to_label'].keys()))
 
-                disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=list(sls['num_to_label'].keys()))
+                disp = ConfusionMatrixDisplay(confusion_matrix=performance_metrics['cm'], display_labels=list(sls['num_to_label'].keys()))
                 disp.plot(cmap=plt.cm.Blues, values_format='.2f')
                 plt.title(classifier_type + '_' + feature_key)
                 if save_plots:
@@ -284,8 +281,7 @@ def get_classification_valg_buffer_results(features, classifiers, sls, basedir, 
                     plt.show()
                 plt.close()
 
-                results[classifier_type][feature_key] = cm
-
+                results[classifier_type][feature_key] = performance_metrics
                 if quick: break
 
         end_time = time.time()

@@ -1,4 +1,6 @@
 import os, shutil
+import numpy as np
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 def create_directory_if_not_exists(directory_path, clean_dir=True):
     if not os.path.exists(directory_path):
         os.makedirs(directory_path)
@@ -138,3 +140,134 @@ def buffer_features(x, n, p=0, opt='nodelay'):
         # Combine result with next row
         result = np.concatenate((result, np.expand_dims(col.T, axis=0).T), axis=2)
     return result.T, return_arr
+
+def get_performance_metrics(y_actual, y_hat, labels):
+
+    cm = confusion_matrix(y_hat, y_actual, labels=labels)
+
+    # Number of classes
+    num_classes = cm.shape[0]
+
+    # Initialize arrays to hold TP, TN, FP, FN for each class
+    TP_classes = np.zeros(num_classes)
+    TN_classes = np.zeros(num_classes)
+    FP_classes = np.zeros(num_classes)
+    FN_classes = np.zeros(num_classes)
+
+    # Calculate TP, TN, FP, FN for each class
+    for i in range(num_classes):
+        TP_classes[i] = cm[i, i]
+        FP_classes[i] = cm[:, i].sum() - cm[i, i]
+        FN_classes[i] = cm[i, :].sum() - cm[i, i]
+        TN_classes[i] = cm.sum() - (TP_classes[i] + FP_classes[i] + FN_classes[i])
+
+    TP = np.sum([TP_classes[i] for i in range(num_classes)])
+    TN = np.sum([TN_classes[i] for i in range(num_classes)])
+    FP = np.sum([FP_classes[i] for i in range(num_classes)])
+    FN = np.sum([FN_classes[i] for i in range(num_classes)])
+
+    # Sensitivity, hit rate, recall, or true positive rate
+    try:
+        TPR = TP/(TP+FN)
+    except ZeroDivisionError:
+        TPR = None
+
+    # Specificity or true negative rate
+    try:
+        TNR = TN / (TN + FP)
+    except ZeroDivisionError:
+        TNR = None
+
+    # Precision or positive predictive value
+    try:
+        PPV = TP / (TP + FP)
+    except ZeroDivisionError:
+        PPV = None
+
+    # Negative predictive value
+    try:
+        NPV = TN / (TN + FN)
+    except ZeroDivisionError:
+        NPV = None
+
+    # Fall out or false positive rate
+    try:
+        FPR = FP / (FP + TN)
+    except ZeroDivisionError:
+        FPR = None
+
+    # False negative rate
+    try:
+        FNR = FN / (TP + FN)
+    except ZeroDivisionError:
+        FNR = None
+
+    # False discovery rate
+    try:
+        FDR = FP / (TP + FP)
+    except ZeroDivisionError:
+        FDR = None
+
+    # Overall accuracy
+    try:
+        ACC = (TP + TN) / (TP + FP + FN + TN)
+    except ZeroDivisionError:
+        ACC = None
+
+    return_metrics = {
+        'ACC': ACC,
+        'PPV': PPV,
+        'TPR': TPR,
+        'TNR': TNR,
+        'FPR': FPR,
+        'FNR': FNR,
+        'NPV': NPV,
+        'FDR': FDR
+    }
+
+    return {
+        'stats': return_metrics,
+        'cm': confusion_matrix(y_hat, y_actual, labels=labels, normalize='true')}
+
+def get_performance_metrics_from_confusion_matrix(cm):
+    # Extract TP, FP, FN, and TN from the confusion matrix
+    TN, FP, FN, TP = cm.ravel()
+
+    # Sensitivity, hit rate, recall, or true positive rate
+    TPR = TP / (TP + FN)
+    # Specificity or true negative rate
+    TNR = TN / (TN + FP)
+    # Precision or positive predictive value
+    PPV = TP / (TP + FP)
+    # Negative predictive value
+    NPV = TN / (TN + FN)
+    # Fall out or false positive rate
+    FPR = FP / (FP + TN)
+    # False negative rate
+    FNR = FN / (TP + FN)
+    # False discovery rate
+    FDR = FP / (TP + FP)
+
+    # Overall accuracy
+    ACC = (TP + TN) / (TP + FP + FN + TN)
+
+    return_metrics = {
+        'ACC': ACC,
+        'PPV': PPV,
+        'TPR': TPR,
+        'TNR': TNR,
+        'FPR': FPR,
+        'FNR': FNR,
+        'FDR': FDR,
+        'NPV': NPV
+    }
+
+    return return_metrics
+
+
+# Example usage:
+# cm = np.array([[50, 10], [5, 100]])
+# metrics = get_performance_metrics_from_confusion_matrix(cm)
+# print(metrics)
+
+
