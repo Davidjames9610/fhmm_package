@@ -131,7 +131,11 @@ def get_classification_results(features, classifiers, sls, basedir, result_type,
                         classifiers_to_combine = [curr_classifiers[speaker_key] for speaker_key in
                                                   curr_classifiers]
 
-                    combined_model = dc.DecodeCombineGaussian(classifiers_to_combine)
+                    combined_model = None
+                    if 'fhmm' in classifier_type or 'GaussianHMM' in classifier_type:
+                        combined_model = dc.DecodeCombineGaussian(classifiers_to_combine)
+                    elif 'GMMHMM' in classifier_type:
+                        combined_model = dc.DecodeCombineGMMHMM(classifiers_to_combine)
 
                     labels_predicted = []
                     labels_predicted_mode = []
