@@ -9,7 +9,6 @@ from the noise model and re-normalize,
 from hmmlearn.hmm import GaussianHMM, GMMHMM, BaseHMM
 import numpy as np
 from scipy.stats import multivariate_normal as mvn
-
 import collections
 
 def get_accuracy_from_decoder(labels, decoder_output, correct_state):
@@ -78,8 +77,6 @@ class DecodeCombineBase:
 
         return pie
 
-
-
     def __calculate_combined_emission_matrix(self, data):
         pass
 
@@ -87,6 +84,68 @@ class DecodeCombineBase:
         pass
 
 class DecodeCombineGaussian(DecodeCombineBase):
+    def __init__(self, array_of_hmms: [GaussianHMM], verbose=False):
+        super().__init__(array_of_hmms)
+        means = self.__calculate_mean_matrix()
+        covars = self.__calculate_covar_matrix()
+        equiv_hmm = GaussianHMM(self.total_states, 'full')
+        equiv_hmm.n_features = array_of_hmms[0].n_features
+        equiv_hmm.covars_ = covars # np.array([np.diag(i) for i in covars])
+        equiv_hmm.means_ = means
+        equiv_hmm.startprob_ = self.pie
+        equiv_hmm.transmat_ = self.a
+        self.hmm = equiv_hmm
+        self.verbose = verbose
+
+    def __calculate_combined_emission_matrix(self, data):
+        log_bs = []
+        for z in range(self.n_models):
+            log_bs.append(calculate_emission_matrix(data, self.models[z]))
+        return np.concatenate(log_bs, axis=0)
+
+    def __calculate_mean_matrix(self):
+        means = []
+        for z in range(self.n_models):
+            means.append(self.models[z].means_)
+
+        means = np.concatenate(means)
+        return means
+
+    def __calculate_covar_matrix(self):
+        covars = []
+        for z in range(self.n_models):
+            covars.append(self.models[z].covars_)
+        covars = np.concatenate(covars)
+        return covars
+
+    def decode_hmmlearn(self, data):
+        if self.verbose:
+            print('decoding using hmmlearn')
+        total_t = len(data)
+        log_prob, ss = self.hmm.decode(data)
+
+        labels = np.zeros(total_t)
+        for z in range(len(ss)):
+            labels[z] = self.map_states[ss[z]]
+
+        return ss, np.array(labels, dtype=int), log_prob
+
+    def decode(self, data):
+        total_t = len(data)
+        print('calculating emission matrix')
+        log_b = self.__calculate_combined_emission_matrix(data)
+
+        # perform Viterbi
+        print('viterbi_algorithm')
+        states, log_prob = viterbi_algorithm(self.pie, self.a, log_b, self.total_states, total_t)
+
+        labels = np.zeros(total_t)
+        for z in range(len(states)):
+            labels[z] = self.map_states[states[z]]
+
+        return states, np.array(labels, dtype=int), log_prob
+
+class DecodeCombineGMMHMM(DecodeCombineBase):
     def __init__(self, array_of_hmms: [GaussianHMM], verbose=False):
         super().__init__(array_of_hmms)
         means = self.__calculate_mean_matrix()
