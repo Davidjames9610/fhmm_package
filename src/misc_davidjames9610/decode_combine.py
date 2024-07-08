@@ -146,16 +146,22 @@ class DecodeCombineGaussian(DecodeCombineBase):
         return states, np.array(labels, dtype=int), log_prob
 
 class DecodeCombineGMMHMM(DecodeCombineBase):
-    def __init__(self, array_of_hmms: [GaussianHMM], verbose=False):
+    def __init__(self, array_of_hmms: [GMMHMM], verbose=False):
         super().__init__(array_of_hmms)
         means = self.__calculate_mean_matrix()
         covars = self.__calculate_covar_matrix()
-        equiv_hmm = GaussianHMM(self.total_states, 'full')
-        equiv_hmm.n_features = array_of_hmms[0].n_features
+        n_mix = array_of_hmms[0].n_mix
+        n_features = array_of_hmms[0].n_features
+        equiv_hmm = GMMHMM(n_components=self.total_states, n_mix=n_mix,covariance_type='diag')
+        equiv_hmm.n_features = n_features
         equiv_hmm.covars_ = covars # np.array([np.diag(i) for i in covars])
         equiv_hmm.means_ = means
         equiv_hmm.startprob_ = self.pie
         equiv_hmm.transmat_ = self.a
+        equiv_hmm.means_weight = np.zeros((self.total_states, n_mix))
+        equiv_hmm.means_prior = np.zeros((self.total_states, n_mix, n_features))
+        equiv_hmm.covars_weight = np.zeros((self.total_states, n_mix, n_features))
+        equiv_hmm.weights_ = np.concatenate([hmm.weights_ for hmm in array_of_hmms])
         self.hmm = equiv_hmm
         self.verbose = verbose
 

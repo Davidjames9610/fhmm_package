@@ -1,7 +1,10 @@
 import os, shutil
 import numpy as np
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
-import pickle
+import pickle as pickle
+import timeit
+import gc
+
 def create_directory_if_not_exists(directory_path, clean_dir=True):
     if not os.path.exists(directory_path):
         os.makedirs(directory_path)
@@ -19,6 +22,14 @@ def create_directory_if_not_exists(directory_path, clean_dir=True):
                 except Exception as e:
                     print('Failed to delete %s. Reason: %s' % (file_path, e))
 
+def load_pickle(location):
+    output = open(location, 'rb')
+    gc.disable()
+    loaded_file = (pickle.load(output))
+    gc.enable()
+    output.close()
+    return loaded_file
+
 def folder_pickles_to_dict(complete_dir, file_part_to_include=None, list_to_include=None):
     some_dict = {}
     for file_name in os.listdir(complete_dir):
@@ -27,16 +38,16 @@ def folder_pickles_to_dict(complete_dir, file_part_to_include=None, list_to_incl
             if file_name.__contains__(file_part_to_include):
                 print('loading', file_name)
                 file_path = os.path.join(complete_dir, file_name)
-                some_dict[clean_file_name] = (pickle.load(open(file_path, 'rb')))
+                some_dict[clean_file_name] = load_pickle(file_path)
         elif list_to_include is not None:
             if file_name.replace('.pickle', '') in list_to_include:
                 print('loading', file_name)
                 file_path = os.path.join(complete_dir, file_name)
-                some_dict[clean_file_name] = (pickle.load(open(file_path, 'rb')))
+                some_dict[clean_file_name] = load_pickle(file_path)
         else:
             print('loading', file_name)
             file_path = os.path.join(complete_dir, file_name)
-            some_dict[clean_file_name] = (pickle.load(open(file_path, 'rb')))
+            some_dict[clean_file_name] = load_pickle(file_path)
 
     sorted_dict = {k: some_dict[k] for k in sorted(some_dict)}
     return sorted_dict
@@ -45,7 +56,7 @@ def dict_to_folder_pickles(folder_name, some_dict):
     create_directory_if_not_exists(folder_name, clean_dir=False)
     for key in some_dict:
         print('saving / updating ', key)
-        pickle.dump(some_dict[key], open(folder_name + '/' + key + '.pickle', 'wb'))
+        pickle.dump(some_dict[key], open(folder_name + '/' + key + '.pickle', 'wb'), protocol=pickle.HIGHEST_PROTOCOL)
 
 def buffer(x, n, p=0, opt=None):
     """
