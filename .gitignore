@@ -8,3 +8,4 @@ src/.DS_Store
 *.pickle
 *.xml
 *.iml
+*.csv
