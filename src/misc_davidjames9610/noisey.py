@@ -110,6 +110,8 @@ def get_noise_for_sample(signal_sample_len, sig_db=-16, snr_1=30, snr_2=30, snr_
     noisey_sample, _ = generate_gaussian_noise(signal_sample_len, noise_power_1, noise_power_2, noise_power_3)
     return noisey_sample
 
+    # snr = signal_db - noise_db
+
 def getNoiseMatrix(features, length, mean):
     mean = np.ones(features) * mean
     cov = np.eye(features)

@@ -11,14 +11,16 @@ import matplotlib.pyplot as plt
 import src.misc_davidjames9610.decode_combine as dc
 import src.misc_davidjames9610.utils as utils
 
+import pickle
+
 
 def get_classification_results(features, classifiers, sls, basedir, result_type, plot_cm=True, save_plots=True,
-                               quick=False, save_results=True, new_results=False):
+                               quick=False, save_results=True, new_results=False, clean_results_dir=False, clean_plot_results=False):
 
     results = {}  # one for each process method
 
     output_dir = basedir + '/plots/' + result_type + '/'
-    utils.create_directory_if_not_exists(output_dir, clean_dir=False)
+    utils.create_directory_if_not_exists(output_dir, clean_dir=clean_plot_results)
 
     print('type:', result_type)
 
@@ -88,8 +90,15 @@ def get_classification_results(features, classifiers, sls, basedir, result_type,
                         arg_max_speaker = np.argmax(speakers_scores)
                         test_labels.append(arg_max_speaker)
 
-                    performance_metrics = utils.get_performance_metrics(buffer_labels_mode, np.array(test_labels),
-                                                                        list(sls['num_to_label'].keys()))
+                    labels_predicted = np.array(test_labels)
+
+                    min_length = np.min([len(buffer_labels_mode), len(labels_predicted)])
+
+                    performance_metrics = utils.get_performance_metrics(
+                        buffer_labels_mode[:min_length],
+                        labels_predicted[:min_length],
+                        list(sls['num_to_label'].keys())
+                    )
 
                 elif result_type == 'classification_annotations_valg':
 
@@ -158,7 +167,7 @@ def get_classification_results(features, classifiers, sls, basedir, result_type,
                         labels=list(sls['num_to_label'].keys()))
 
                 disp = ConfusionMatrixDisplay(confusion_matrix=performance_metrics['cm'],
-                                              display_labels=list(sls['num_to_label'].keys()))
+                                              display_labels=list(sls['label_to_num'].keys()))
                 disp.plot(cmap=plt.cm.Blues, values_format='.2f')
                 plt.title(classifier_type + '_' + feature_key)
                 if save_plots:
@@ -175,7 +184,7 @@ def get_classification_results(features, classifiers, sls, basedir, result_type,
                     break
         # save here
         utils.dict_to_folder_pickles(basedir + '/results/' + result_type + '/' + classifier_type,
-                                     results[classifier_type])
+                                     results[classifier_type], clean_dir=clean_results_dir)
         if quick:
             break
 
@@ -408,7 +417,7 @@ def get_classification_valg_buffer_results(features, classifiers, sls, basedir, 
 
 
 # updates feature dictionary to include buffered features and labels
-def include_buffer_in_features(features, buffer_length=500, buffer_step=250):
+def include_buffer_in_features(features, buffer_length=500, buffer_step=250, location=None):
     for feature_key in features:
         print('  buffering for:', feature_key)
 
@@ -430,3 +439,11 @@ def include_buffer_in_features(features, buffer_length=500, buffer_step=250):
         features[feature_key]['buffer_labels'] = buffer_labels
         features[feature_key]['buffer_labels_mode'] = buffer_labels_mode
         # break
+        if location is not None:
+            utils.create_directory_if_not_exists(location, clean_dir=False)
+            # for key in some_dict:
+            print('saving / updating ', feature_key)
+            pickle.dump(features[feature_key], open(location + '/' + feature_key + '.pickle', 'wb'),
+                        protocol=pickle.HIGHEST_PROTOCOL)
+
+

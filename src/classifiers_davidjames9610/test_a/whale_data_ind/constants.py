@@ -17,7 +17,7 @@ NOISE = 'NOISE'
 # YouTube - YTD
 
 # target sampling rate
-SAMPLING_RATE = 8000
+SAMPLING_RATE = 22050
 
 # _____________________________________________________________________________________________________________________#
 # Humpback - HPB (76)
@@ -26,6 +26,7 @@ HPB_WTK_DATA = r'/Users/david/Documents/mastersCode/ubm/whale/setup/data/humpbac
 HPB_WTK_LABEL_ALL = r'/Users/david/Documents/mastersCode/ubm/whale/setup/data/humpback/watkins/92201001.txt'
 HPB_WTK_NOISE = r'/Users/david/Documents/mastersCode/ubm/whale/setup/data/humpback/watkins/noise.txt'
 HPB_WTK_SWOOP = r'/Users/david/Documents/mastersCode/ubm/whale/setup/data/humpback/watkins/high_swoops.txt'
+
 
 # 2. MBY
 HPB_MBY_DATA = r'/Users/david/Documents/mastersCode/ubm/whale/setup/data/humpback/moby/940302-1222.wav'

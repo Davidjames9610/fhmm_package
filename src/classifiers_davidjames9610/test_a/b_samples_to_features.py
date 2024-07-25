@@ -1,18 +1,19 @@
 import numpy as np
 import random
 import src.ads_davidjames9610.useful as useful
+import matplotlib.pyplot as plt
 
 def get_average_power_for_samples(cv_output):
     # get average signal power
     curr_samples = cv_output['train_data'][0]
     random_indices = random.sample(range(1, len(curr_samples)), 20)
-    samples = np.concatenate([curr_samples[indice] for indice in random_indices])
+    samples = np.concatenate(curr_samples[:20])  # np.concatenate([curr_samples[indice] for indice in random_indices])
     ap = periodic_power(samples, 500, 250)
     ap = np.array(ap)
-    ap = ap[ap > 0.05]
-    # plt.plot(ap)
-    # plt.show()
-    # plt.close()
+    # ap = ap[ap > 0.05]
+    plt.plot(ap)
+    plt.show()
+    plt.close()
     return np.mean(ap)
 
 def periodic_power(x, lx, p):
@@ -84,9 +85,20 @@ def buffer(x, n, p=0, opt=None):
 def get_real_noise_sample(noise_key, target_snr_db, signal_db, sample_len, sr):
     # 1. read in noise sample and normalise
     noise_sample = useful.file_to_audio(noise_key, sr)[0]
+    noise_sample = noise_sample[100000:] # update to avoid silence at start
+    ap = periodic_power(noise_sample, 200, 100)
+    ap = np.array(ap)
+    # ap = ap[ap > 0.05]
+    # plt.plot(ap)
+    # plt.title('periodic power noise')
+    # plt.show()
+    # plt.close()
 
     if len(noise_sample) < sample_len:
         print('oh no; len(noise_sample) < sample_len')
+
+    noise_avg_watts_v2 = np.square(np.linalg.norm(noise_sample, ord=2)) / len(
+        noise_sample)
 
     # 2. Calculate the scaling factor
     noise_avg_watts = np.mean(noise_sample ** 2)
@@ -98,7 +110,9 @@ def get_real_noise_sample(noise_key, target_snr_db, signal_db, sample_len, sr):
 
     # 3. return noise scaled
     scaled_noise_sample = noise_sample * scaling_factor
-
+    # 10 * np.log10(np.mean(scaled_noise_sample ** 2))
     return scaled_noise_sample
+
+# snr = signal - noise
 
 

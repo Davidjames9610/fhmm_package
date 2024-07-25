@@ -1,7 +1,8 @@
 basedirs = [
     'src.classifiers_davidjames9610.test_a.speech_commands.config',
     'src.classifiers_davidjames9610.test_a.ivector_speech_data.config',
-    'src.classifiers_davidjames9610.test_a.whale_data.config'
+    'src.classifiers_davidjames9610.test_a.whale_data.config',
+    'src.classifiers_davidjames9610.test_a.whale_data_ind.config'
 ]
 
 config_location = basedirs[0]

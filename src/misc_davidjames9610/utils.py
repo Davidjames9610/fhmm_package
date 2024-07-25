@@ -52,8 +52,8 @@ def folder_pickles_to_dict(complete_dir, file_part_to_include=None, list_to_incl
     sorted_dict = {k: some_dict[k] for k in sorted(some_dict)}
     return sorted_dict
 
-def dict_to_folder_pickles(folder_name, some_dict):
-    create_directory_if_not_exists(folder_name, clean_dir=False)
+def dict_to_folder_pickles(folder_name, some_dict, clean_dir=False):
+    create_directory_if_not_exists(folder_name, clean_dir=clean_dir)
     for key in some_dict:
         print('saving / updating ', key)
         pickle.dump(some_dict[key], open(folder_name + '/' + key + '.pickle', 'wb'), protocol=pickle.HIGHEST_PROTOCOL)
