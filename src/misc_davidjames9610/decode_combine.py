@@ -152,7 +152,7 @@ class DecodeCombineGMMHMM(DecodeCombineBase):
         covars = self.__calculate_covar_matrix()
         n_mix = array_of_hmms[0].n_mix
         n_features = array_of_hmms[0].n_features
-        equiv_hmm = GMMHMM(n_components=self.total_states, n_mix=n_mix,covariance_type='diag')
+        equiv_hmm = GMMHMM(n_components=self.total_states, n_mix=n_mix, covariance_type='diag')
         equiv_hmm.n_features = n_features
         equiv_hmm.covars_ = covars # np.array([np.diag(i) for i in covars])
         equiv_hmm.means_ = means

@@ -51,9 +51,9 @@ def get_classification_results(features, classifiers, sls, basedir, result_type,
                 cv_index = 0  # todo think about updating this cv index for testing
 
                 curr_features = features[feature_key]['val_features'][cv_index]
-                curr_label = features[feature_key]['val_label'][cv_index]
+                true_label = features[feature_key]['val_label'][cv_index]
                 curr_classifiers = classifier['trained_classifiers'][feature_key]
-                test_labels = []
+                predicted_labels = []
                 start_time_inner = time.time()
 
                 performance_metrics = None
@@ -66,9 +66,9 @@ def get_classification_results(features, classifiers, sls, basedir, result_type,
                             speaker_hmm: BaseHMM = curr_classifiers[speaker]
                             speakers_scores.append(speaker_hmm.score(feat))
                         arg_max_speaker = np.argmax(speakers_scores)
-                        test_labels.append(arg_max_speaker)
-
-                    performance_metrics = utils.get_performance_metrics(np.array(test_labels), curr_label,
+                        predicted_labels.append(arg_max_speaker)
+                    predicted_labels = np.array(predicted_labels)
+                    performance_metrics = utils.get_performance_metrics(true_label, predicted_labels,
                                                                         labels=list(sls['num_to_label'].keys()))
 
                 elif result_type == 'classification_buffer':
@@ -78,9 +78,9 @@ def get_classification_results(features, classifiers, sls, basedir, result_type,
                     # curr_classifiers = classifier['trained_classifiers'][feature_key]
                     buffer_features = features[feature_key]['buffer_features']
                     # buffer_labels = features[feature_key]['buffer_labels']
-                    buffer_labels_mode = features[feature_key]['buffer_labels_mode']
+                    true_labels_buffer = features[feature_key]['buffer_labels_mode']
 
-                    test_labels = []
+                    predicted_labels = []
 
                     for feat in buffer_features:
                         speakers_scores = []
@@ -88,23 +88,24 @@ def get_classification_results(features, classifiers, sls, basedir, result_type,
                             speaker_hmm: BaseHMM = curr_classifiers[speaker]
                             speakers_scores.append(speaker_hmm.score(feat))
                         arg_max_speaker = np.argmax(speakers_scores)
-                        test_labels.append(arg_max_speaker)
+                        predicted_labels.append(arg_max_speaker)
 
-                    labels_predicted = np.array(test_labels)
+                    predicted_labels = np.array(predicted_labels)
 
-                    min_length = np.min([len(buffer_labels_mode), len(labels_predicted)])
+                    min_length = np.min([len(true_labels_buffer), len(predicted_labels)])
 
                     performance_metrics = utils.get_performance_metrics(
-                        buffer_labels_mode[:min_length],
-                        labels_predicted[:min_length],
+                        true_labels_buffer[:min_length],
+                        predicted_labels[:min_length],
                         list(sls['num_to_label'].keys())
                     )
 
                 elif result_type == 'classification_annotations_valg':
 
-                    long_labels = [curr_label[i] * np.ones(len(curr_features[i])) for i in range(len(curr_label))]
-                    labels_true = np.concatenate(long_labels)
+                    true_long_labels = [true_label[i] * np.ones(len(curr_features[i])) for i in range(len(true_label))]
+                    true_long_labels = np.concatenate(true_long_labels)
 
+                    # extract hmm, dnn lstm will be different here
                     if 'fhmm' in classifier_type:
                         classifiers_to_combine = [curr_classifiers[speaker_key].hmm_combined for speaker_key in
                                                   curr_classifiers]
@@ -118,17 +119,17 @@ def get_classification_results(features, classifiers, sls, basedir, result_type,
                     elif 'GMMHMM' in classifier_type:
                         combined_model = dc.DecodeCombineGMMHMM(classifiers_to_combine)
 
-                    _, labels_predicted, val_log_prob = combined_model.decode_hmmlearn(np.concatenate(curr_features))
+                    _, predicted_labels, val_log_prob = combined_model.decode_hmmlearn(np.concatenate(curr_features))
 
                     # CM
-                    performance_metrics = utils.get_performance_metrics(labels_true, labels_predicted,
+                    performance_metrics = utils.get_performance_metrics(true_long_labels, predicted_labels,
                                                                         list(sls['num_to_label'].keys()))
 
                 elif result_type == 'classification_buffer_valg':
 
                     buffer_features = features[feature_key]['buffer_features']  # [:20]
                     buffer_labels = features[feature_key]['buffer_labels']  # [:20]
-                    buffer_labels_mode = features[feature_key]['buffer_labels_mode']  # [:20]
+                    true_labels_mode = features[feature_key]['buffer_labels_mode']  # [:20]
 
                     # long_labels = [curr_labels[i] * np.ones(len(curr_features[i])) for i in range(len(curr_labels))]
                     # labels_true = np.concatenate(long_labels)
@@ -146,12 +147,12 @@ def get_classification_results(features, classifiers, sls, basedir, result_type,
                     elif 'GMMHMM' in classifier_type:
                         combined_model = dc.DecodeCombineGMMHMM(classifiers_to_combine)
 
-                    labels_predicted = []
-                    labels_predicted_mode = []
+                    predicted_labels = []
+                    predicted_labels_mode = []
                     for feat in buffer_features:
                         _, feat_labels_predicted, val_log_prob = combined_model.decode_hmmlearn(feat)
-                        labels_predicted.append(feat_labels_predicted)
-                        labels_predicted_mode.append(stats.mode(feat_labels_predicted, keepdims=True).mode[0])
+                        predicted_labels.append(feat_labels_predicted)
+                        predicted_labels_mode.append(stats.mode(feat_labels_predicted, keepdims=True).mode[0])
 
                     # long input # todo review this
                     # buffer_labels_concat = np.concatenate(buffer_labels)
@@ -159,11 +160,11 @@ def get_classification_results(features, classifiers, sls, basedir, result_type,
                     # min_length = np.min([len(buffer_labels_concat), len(labels_predicted_concat)])
 
                     # mode input
-                    min_length = np.min([len(labels_predicted_mode), len(buffer_labels_mode)])
+                    min_length = np.min([len(predicted_labels_mode), len(true_labels_mode)])
 
                     performance_metrics = utils.get_performance_metrics(
-                        labels_predicted_mode[:min_length],
-                        buffer_labels_mode[:min_length],
+                        true_labels_mode[:min_length],
+                        predicted_labels_mode[:min_length],
                         labels=list(sls['num_to_label'].keys()))
 
                 disp = ConfusionMatrixDisplay(confusion_matrix=performance_metrics['cm'],

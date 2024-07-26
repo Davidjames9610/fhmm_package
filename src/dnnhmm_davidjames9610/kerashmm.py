@@ -1,6 +1,14 @@
+import keras.optimizers
+# combine lstm and deep nn with hmm
+
+
 import numpy as np
 import hmmlearn.hmm as hmmlearn
 from sklearn.neural_network import MLPClassifier
+from keras.models import Sequential
+from keras.layers import Dense, LSTM, Activation, Flatten
+import tensorflow as tf
+from keras.utils import to_categorical
 
 def elog(x):
     res = np.log(x, where=(x != 0))
@@ -32,54 +40,60 @@ def logSumExp(x, axis=None, keepdims=False):
     return x_max + np.log(sumexp)
 
 
-class DNNHMM:
-    def __init__(self, n_mix=2, n_components=4):
+class LogProbLayer(tf.keras.layers.Layer):
+    def call(self, inputs):
+        return tf.math.log(inputs)
+
+class KerasHMM:
+    def __init__(self, n_components=8, n_mix=2, lstm=True):
         self.n_mix = n_mix
         self.n_components = n_components
-        self.hmm = hmmlearn.GaussianHMM(n_components=n_components)
-        self.mlp = None
+        self.hmm = hmmlearn.GaussianHMM(n_components=n_components) # , n_mix=n_mix)  # todo update to GMM
+        self.nn = None
+        self.lstm = lstm
 
     # features should not be concatenated
     def fit(self, features):
         self.train_hmm(features)
-        sequences = self.viterbi_hmm(features)
-        self.train_mlp(features, sequences)
+        # sequences = self.hmm.predict(features)
+        posterior_probs = self.hmm.predict_proba(features)
+        self.train_nn(features, posterior_probs)
 
     def train_hmm(self, features):
-        lengths = []
-        for n, i in enumerate(features):
-            lengths.append(len(i))
-        self.hmm.fit(np.concatenate(features), lengths)
-        # self.hmm.fit(features)
+        # lengths = []
+        # for n, i in enumerate(features):
+        #     lengths.append(len(i))
+        # self.hmm.fit(np.concatenate(features), lengths)
+        self.hmm.fit(features)
 
-    def viterbi_hmm(self, features):
-        sequences = []
-        for feature in features:
-            sequences.append(self.hmm.predict(feature))
-        return sequences
+    def train_nn(self, features, sequences):
 
-    def train_mlp(self, features, sequences):
+        # one_hot_encoded = to_categorical(sequences, num_classes=self.n_components)
+        dim = features.shape[1]
 
-        O = []
-        S = []
+        model = Sequential()
+        if self.lstm:
+            model.add(LSTM(50, activation='relu', input_shape=(dim, 1), return_sequences=True))
+            model.add(LSTM(25, activation='relu'))
+            model.add(Dense(self.n_components, activation='softmax'))
+            # model.add(Activation('softmax'))
+            # model.add(LogProbLayer())
+            model.compile(loss='categorical_crossentropy', optimizer='adam')
+        else:
+            model.add(Dense(100, activation='relu', input_shape=(dim, 1)))
+            model.add(Flatten())
+            model.add(Dense(50, activation='relu'))
+            # model.add(Dense(25, activation='relu'))
+            model.add(Dense(self.n_components, activation='softmax'))
+            optimizer = keras.optimizers.Adam(learning_rate=0.0001)
+            model.compile(loss='categorical_crossentropy', optimizer=optimizer)
 
-        for data_u, seq in zip(features, sequences):
-            data_u_expanded = getExpandedData(data_u)
-            O.append(data_u_expanded)
-            S.append(seq)
+        model.fit(features, sequences, verbose=False)
 
-        O = np.vstack(O)
-        S = np.concatenate(S, axis=0)
-
-        mlp = MLPClassifier(hidden_layer_sizes=(85, 85), random_state=1, early_stopping=True, verbose=True,
-                            validation_fraction=0.2, max_iter=50, learning_rate_init=0.001, tol=1e-3)
-        mlp.fit(O, S)
-
-        self.mlp = mlp
+        self.nn = model
 
     def mlp_predict(self, o):
-        o_expanded = getExpandedData(o)
-        return self.mlp.predict_log_proba(o_expanded)
+        return np.log(self.nn.predict(o, verbose=False) + 1e-8)
 
     def viterbi_mlp(self, o):
 

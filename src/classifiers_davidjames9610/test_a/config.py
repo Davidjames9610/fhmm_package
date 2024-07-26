@@ -5,7 +5,7 @@ basedirs = [
     'src.classifiers_davidjames9610.test_a.whale_data_ind.config'
 ]
 
-config_location = basedirs[0]
+config_location = basedirs[2]
 
 # MUSAN noise
 # sound keys
