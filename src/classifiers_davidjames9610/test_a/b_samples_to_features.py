@@ -2,6 +2,12 @@ import numpy as np
 import random
 import src.ads_davidjames9610.useful as useful
 import matplotlib.pyplot as plt
+import src.misc_davidjames9610.noisey as noisey
+import src.classifiers_davidjames9610.test_a.config as base_config
+import importlib
+
+config = importlib.import_module(base_config.config_location)
+
 
 def get_average_power_for_samples(cv_output):
     # get average signal power
@@ -16,12 +22,14 @@ def get_average_power_for_samples(cv_output):
     plt.close()
     return np.mean(ap)
 
+
 def periodic_power(x, lx, p):
     buf = buffer(x, lx, p)
     average_pow = []
     for b in buf:
         average_pow.append(np.sum(np.square(b)) / lx)
     return average_pow
+
 
 def buffer(x, n, p=0, opt=None):
     """
@@ -82,10 +90,12 @@ def buffer(x, n, p=0, opt=None):
         result = np.hstack([result, np.expand_dims(col, axis=0).T])
 
     return result.T
+
+
 def get_real_noise_sample(noise_key, target_snr_db, signal_db, sample_len, sr):
     # 1. read in noise sample and normalise
     noise_sample = useful.file_to_audio(noise_key, sr)[0]
-    noise_sample = noise_sample[100000:] # update to avoid silence at start
+    noise_sample = noise_sample[100000:]  # update to avoid silence at start
     ap = periodic_power(noise_sample, 200, 100)
     ap = np.array(ap)
     # ap = ap[ap > 0.05]
@@ -113,6 +123,97 @@ def get_real_noise_sample(noise_key, target_snr_db, signal_db, sample_len, sr):
     # 10 * np.log10(np.mean(scaled_noise_sample ** 2))
     return scaled_noise_sample
 
+
+from src.misc_davidjames9610.noisey import get_noise_avg_watts
+
+
+# import importlib
+# importlib.reload(fe)
+
+class ProcessingBase:
+    def __init__(self, fe_method):
+        self.fe_method = fe_method
+
+    def __str__(self):
+        return self.fe_method.__str__() + '_None_None'
+
+    def pre_process(self, sample):
+        return self.fe_method(sample)
+
+    def post_process(self, sample):
+        return self.fe_method(sample)
+
+    def get_noise_feature(self):
+        pass
+
+
+class ProcessingGaussNoise:
+    def __init__(self, fe_method, snr, signal_power, sample_len):
+        self.fe_method = fe_method
+        self.snr = snr
+        self.signal_power = signal_power
+        self.noise_sample = noisey.get_noise_for_sample(sample_len, self.signal_power, self.snr, self.snr, self.snr)
+
+    def __str__(self):
+        return self.fe_method.__str__() + '_GaussNoise_SNR' + str(self.snr)
+
+    def pre_process(self, sample):
+        return self.fe_method(sample)
+
+    def post_process(self, sample):
+        sample = self.noise_sample[:len(sample)] + sample
+        return self.fe_method(sample)
+
+    def get_noise_feature(self):
+        return self.fe_method(self.noise_sample)
+
+
+class ProcessingRealNoise:
+    def __init__(self, fe_method, snr, signal_power, sample_len, noise_key):
+        self.fe_method = fe_method
+        self.snr = snr
+        self.signal_power = signal_power
+        self.noise_key = noise_key
+
+        self.noise_sample = get_real_noise_sample(
+            noise_key=base_config.noise_sound_lib[noise_key], target_snr_db=snr, signal_db=signal_power,
+            sample_len=sample_len, sr=config.sr)
+
+        print('completed ProcessingRealNoise')
+
+    def __str__(self):
+        return self.fe_method.__str__() + '_RealNoise_' + self.noise_key + '_SNR' + str(self.snr)
+
+    def pre_process(self, sample):
+        return self.fe_method(sample)
+
+    def post_process(self, sample):
+        sample = self.noise_sample[:len(sample)] + sample
+        return self.fe_method(sample)
+
+    def get_noise_feature(self):
+        return self.fe_method(self.noise_sample)
+
+
+class ProcessingGaussNoiseReverb:
+    # todo finish this somehow
+    def __init__(self, fe_method, snr, signal_power, sample_len):
+        self.snr = snr
+        self.signal_power = signal_power
+        self.fe_method = fe_method
+
+    def __str__(self):
+        return self.fe_method.__str__() + '_GaussNoise_SNR' + str(self.snr) + '_Reverb'
+
+    def pre_process(self, sample):
+        return self.fe_method(sample)
+
+    def post_process(self, sample):
+        # todo update so Gauss Noise Reverb works
+        return self.fe_method(sample)
+
+    def get_noise_feature(self):
+        # update
+        return []
+
 # snr = signal - noise
-
-

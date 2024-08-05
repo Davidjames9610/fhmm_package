@@ -45,12 +45,13 @@ class LogProbLayer(tf.keras.layers.Layer):
         return tf.math.log(inputs)
 
 class KerasHMM:
-    def __init__(self, n_components=8, n_mix=2, lstm=True):
+    def __init__(self, n_components=8, n_mix=2, lstm=True, verbose=False):
         self.n_mix = n_mix
         self.n_components = n_components
-        self.hmm = hmmlearn.GaussianHMM(n_components=n_components) # , n_mix=n_mix)  # todo update to GMM
+        self.hmm = hmmlearn.GMMHMM(n_components=n_components, n_mix=n_mix) # , n_mix=n_mix)  # todo update to GMM
         self.nn = None
         self.lstm = lstm
+        self.verbose = verbose
 
     # features should not be concatenated
     def fit(self, features):
@@ -73,7 +74,8 @@ class KerasHMM:
 
         model = Sequential()
         if self.lstm:
-            model.add(LSTM(50, activation='relu', input_shape=(dim, 1), return_sequences=True))
+            model.add(LSTM(150, activation='relu', input_shape=(dim, 1), return_sequences=True))
+            model.add(LSTM(100, activation='relu', input_shape=(dim, 1), return_sequences=True))
             model.add(LSTM(25, activation='relu'))
             model.add(Dense(self.n_components, activation='softmax'))
             # model.add(Activation('softmax'))
@@ -88,12 +90,12 @@ class KerasHMM:
             optimizer = keras.optimizers.Adam(learning_rate=0.0001)
             model.compile(loss='categorical_crossentropy', optimizer=optimizer)
 
-        model.fit(features, sequences, verbose=False)
+        model.fit(features, sequences, verbose=self.verbose)
 
         self.nn = model
 
     def mlp_predict(self, o):
-        return np.log(self.nn.predict(o, verbose=False) + 1e-8)
+        return np.log(self.nn.predict(o, verbose=self.verbose) + 1e-8)
 
     def viterbi_mlp(self, o):
 
