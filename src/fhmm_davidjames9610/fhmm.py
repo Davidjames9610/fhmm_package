@@ -37,32 +37,21 @@ class FHMM:
         # hmm 
         self.hmm_a.fit(features_a)
         self.hmm_b.fit(features_b)
-
-        # combine mean and covariance
-        combined_mean, combined_covariance, state_dict = get_combined_mean_covariance_and_state_dict(self.hmm_a, self.hmm_b)
-
-        # combine pi and A
-        pi_combined = kronecker_list([self.hmm_a.startprob_, self.hmm_b.startprob_])
-        pi_combined = pi_combined + 1e-10
-        pi_combined /= pi_combined.sum()
-
-        a_combined = kronecker_list([self.hmm_a.transmat_, self.hmm_b.transmat_]) + 1e-10
-        a_combined /= a_combined.sum(axis=1)
-
-        # create HMM
-        hmm_combined = GaussianHMM(self.n_components_a * self.n_components_b, covariance_type='diag')
-        hmm_combined.n_features = self.hmm_a.n_features
-        hmm_combined.transmat_, hmm_combined.startprob_, hmm_combined.means_, hmm_combined.covars_ = a_combined, pi_combined, combined_mean, combined_covariance
-
-        # combine things
-        self.hmm_combined = hmm_combined
-        self.state_dict = state_dict
+        self.combine_given_hmms(self.hmm_a, self.hmm_b)
 
     def fit_given_signal_hmm(self, hmm_a, features_b):
         # hmm
         self.hmm_a = hmm_a
         self.n_components_a = hmm_a.n_components
         self.hmm_b.fit(features_b)
+        self.combine_given_hmms(self.hmm_a, self.hmm_b)
+
+    def combine_given_hmms(self, hmm_a, hmm_b):
+
+        self.hmm_a = hmm_a
+        self.n_components_a = hmm_a.n_components
+        self.hmm_b = hmm_b
+        self.n_components_b = hmm_b.n_components
 
         # combine mean and covariance
         combined_mean, combined_covariance, state_dict = get_combined_mean_covariance_and_state_dict(self.hmm_a, self.hmm_b)

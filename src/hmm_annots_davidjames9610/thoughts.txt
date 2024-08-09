@@ -1,0 +1,13 @@
+
+
+hybrid vs normal approach
+
+not necessarily showing hybrid working better.
+so not fair to compare to normal.
+what to compare to then?
+no point not using hybrid when re-training.
+
+base-case of normal - trained using aic / bic no fhmm
+
+case using hybrid, including fhmm and infinite to choose states.
+
